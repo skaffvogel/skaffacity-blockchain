@@ -14,7 +14,10 @@ MONIKER="skaffacity-node"
 HOME_DIR="$HOME/.skaffacity"
 BINARY_NAME="skaffacityd"
 SERVICE_NAME="skaffacity"
-FEE_DISTRIBUTION_DEV_ADDRESS="skaffa1your-developer-address-here"  # UPDATE THIS!
+FEE_DISTRIBUTION_DEV_ADDRESS=""  # Leave empty - will be created during deployment
+
+# Ask user if they want to create a developer address now
+CREATE_DEV_ADDRESS_NOW=true  # Set to false if you have an existing address
 
 # Colors for output
 RED='\033[0;31m'
@@ -46,8 +49,13 @@ if [ "$EUID" -eq 0 ]; then
 fi
 
 # Check if developer address is set
-if [ "$FEE_DISTRIBUTION_DEV_ADDRESS" = "skaffa1your-developer-address-here" ]; then
-    print_warning "Please update FEE_DISTRIBUTION_DEV_ADDRESS in this script with your actual address"
+if [ "$CREATE_DEV_ADDRESS_NOW" = true ] && [ -z "$FEE_DISTRIBUTION_DEV_ADDRESS" ]; then
+    print_status "Developer address not set. Will create one during deployment."
+    print_status "You can also set an existing address later with: skaffacityd tx web set-developer-address <your-address>"
+elif [ -n "$FEE_DISTRIBUTION_DEV_ADDRESS" ]; then
+    print_status "Using provided developer address: $FEE_DISTRIBUTION_DEV_ADDRESS"
+else
+    print_warning "No developer address configured. Fee distribution will be disabled initially."
     print_warning "You can set it later with: skaffacityd tx web set-developer-address <your-address>"
 fi
 
@@ -89,6 +97,16 @@ $BINARY_NAME init $MONIKER --chain-id $CHAIN_ID --home $HOME_DIR
 print_status "Creating validator account..."
 $BINARY_NAME keys add validator --home $HOME_DIR
 
+# 6.1. Create developer account if requested
+if [ "$CREATE_DEV_ADDRESS_NOW" = true ] && [ -z "$FEE_DISTRIBUTION_DEV_ADDRESS" ]; then
+    print_status "Creating developer account for fee distribution..."
+    $BINARY_NAME keys add developer --home $HOME_DIR
+    FEE_DISTRIBUTION_DEV_ADDRESS=$($BINARY_NAME keys show developer -a --home $HOME_DIR)
+    print_success "Developer account created: $FEE_DISTRIBUTION_DEV_ADDRESS"
+    print_warning "IMPORTANT: Save your developer account mnemonic phrase!"
+    print_warning "You can export it with: $BINARY_NAME keys export developer --home $HOME_DIR"
+fi
+
 # 7. Create genesis account
 print_status "Setting up genesis..."
 VALIDATOR_ADDR=$($BINARY_NAME keys show validator -a --home $HOME_DIR)
@@ -106,7 +124,7 @@ print_status "Configuring fee distribution system..."
 GENESIS_FILE="$HOME_DIR/config/genesis.json"
 
 # Update genesis with fee distribution config (if developer address is set)
-if [ "$FEE_DISTRIBUTION_DEV_ADDRESS" != "skaffa1your-developer-address-here" ]; then
+if [ -n "$FEE_DISTRIBUTION_DEV_ADDRESS" ]; then
     print_status "Setting up fee distribution with developer address: $FEE_DISTRIBUTION_DEV_ADDRESS"
     
     # Create temporary genesis with fee distribution
@@ -120,7 +138,11 @@ if [ "$FEE_DISTRIBUTION_DEV_ADDRESS" != "skaffa1your-developer-address-here" ]; 
     
     print_success "Fee distribution configured: 10% to developer, 90% to validators"
 else
-    print_warning "Fee distribution disabled - update developer address later"
+    print_warning "Fee distribution disabled - no developer address set"
+    print_status "You can enable it later with:"
+    print_status "1. Create address: $BINARY_NAME keys add developer --home $HOME_DIR"
+    print_status "2. Set address: $BINARY_NAME tx web set-developer-address <address>"
+    print_status "3. Enable: $BINARY_NAME tx web enable-fee-distribution true"
 fi
 
 # 11. Configure node
@@ -198,14 +220,17 @@ echo "- API: http://$(curl -s ifconfig.me):1317"
 echo "- gRPC: $(curl -s ifconfig.me):9090"
 echo ""
 echo "💰 Fee Distribution:"
-if [ "$FEE_DISTRIBUTION_DEV_ADDRESS" != "skaffa1your-developer-address-here" ]; then
+if [ -n "$FEE_DISTRIBUTION_DEV_ADDRESS" ]; then
     echo "- Status: ENABLED"
     echo "- Developer Address: $FEE_DISTRIBUTION_DEV_ADDRESS"
     echo "- Developer Fee: 10%"
     echo "- Validator Fee: 90%"
 else
     echo "- Status: DISABLED"
-    echo "- To enable: skaffacityd tx web set-developer-address <your-address>"
+    echo "- To enable:"
+    echo "  1. Create developer account: $BINARY_NAME keys add developer --home $HOME_DIR"
+    echo "  2. Set address: $BINARY_NAME tx web set-developer-address <address>"
+    echo "  3. Enable distribution: $BINARY_NAME tx web enable-fee-distribution true"
 fi
 echo ""
 echo "🔧 Useful Commands:"
@@ -216,6 +241,9 @@ echo "- Stop: sudo systemctl stop $SERVICE_NAME"
 echo ""
 echo "🔑 Account Information:"
 echo "- Validator address: $VALIDATOR_ADDR"
+if [ -n "$FEE_DISTRIBUTION_DEV_ADDRESS" ]; then
+    echo "- Developer address: $FEE_DISTRIBUTION_DEV_ADDRESS"
+fi
 echo "- View keys: $BINARY_NAME keys list --home $HOME_DIR"
 echo ""
 echo "📈 Monitoring:"
@@ -229,8 +257,15 @@ echo "💼 Start earning fees from transactions automatically!"
 echo ""
 echo "📝 Next Steps:"
 echo "1. Save your validator key: $BINARY_NAME keys export validator --home $HOME_DIR"
-echo "2. Update developer address: $BINARY_NAME tx web set-developer-address <your-address>"
-echo "3. Enable fee distribution: $BINARY_NAME tx web enable-fee-distribution true"
-echo "4. Monitor your earnings and node health"
+if [ -n "$FEE_DISTRIBUTION_DEV_ADDRESS" ]; then
+    echo "2. Save your developer key: $BINARY_NAME keys export developer --home $HOME_DIR"
+    echo "3. Fee distribution is already enabled and earning!"
+    echo "4. Monitor your earnings: ./manage-fees.sh earnings"
+else
+    echo "2. Create developer address: $BINARY_NAME keys add developer --home $HOME_DIR"
+    echo "3. Set developer address: $BINARY_NAME tx web set-developer-address <your-address>"
+    echo "4. Enable fee distribution: $BINARY_NAME tx web enable-fee-distribution true"
+fi
+echo "5. Monitor your node health: ./monitor-health.sh"
 echo ""
 print_success "Deployment completed successfully! 🎉"

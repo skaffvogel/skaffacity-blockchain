@@ -4,7 +4,30 @@ Complete production-ready deployment package for SkaffaCity blockchain with inte
 
 ## 🚀 Quick Deployment
 
-### Prerequisites
+### Developer Address Options
+
+You have three ways to handle the developer address for fee collection:
+
+### Option 1: Auto-generate during deployment (Recommended)
+Simply run the deployment script - it will automatically create a developer address:
+```bash
+./deploy-vps.sh
+```
+
+### Option 2: Pre-generate developer address
+Create your address first, then deploy:
+```bash
+./generate-developer-address.sh
+./deploy-vps.sh
+```
+
+### Option 3: Manual configuration
+If you already have an address, edit `deploy-vps.sh` and set:
+```bash
+DEVELOPER_ADDRESS="your-existing-skaffa1-address"
+```
+
+## Prerequisites
 - Ubuntu 20.04+ VPS
 - Minimum 4GB RAM, 2 CPU cores
 - 50GB+ storage
@@ -17,10 +40,14 @@ Complete production-ready deployment package for SkaffaCity blockchain with inte
 git clone https://github.com/skaffvogel/skaffacity-blockchain.git
 cd skaffacity-blockchain
 
-# Make deployment script executable
-chmod +x deploy-vps.sh
+# Make scripts executable
+chmod +x *.sh
 
-# Run deployment (update developer address in script first!)
+# Option 1: Auto-generate developer address during deployment
+./deploy-vps.sh
+
+# Option 2: Generate developer address first, then deploy
+./generate-developer-address.sh
 ./deploy-vps.sh
 ```
 
@@ -47,13 +74,36 @@ chmod +x deploy-vps.sh
 
 ## 💰 Fee Distribution Configuration
 
-### Update Developer Address
+### Option 1: Auto-Generate Address (Recommended)
+The deployment script will automatically create a developer address:
 ```bash
-# Edit deploy-vps.sh before deployment
-FEE_DISTRIBUTION_DEV_ADDRESS="skaffa1your-actual-address-here"
+# No configuration needed - just run deployment
+./deploy-vps.sh
 
-# Or update after deployment
-./manage-fees.sh set-address skaffa1your-actual-address-here
+# The script will:
+# 1. Create a developer account during deployment
+# 2. Configure fee distribution automatically
+# 3. Start earning fees immediately
+```
+
+### Option 2: Use Pre-Generated Address
+Generate your address before deployment:
+```bash
+# Generate developer address
+./generate-developer-address.sh
+
+# This will:
+# 1. Create a new SkaffaCity address
+# 2. Show you the mnemonic phrase
+# 3. Update deploy-vps.sh automatically
+# 4. Prepare for deployment
+```
+
+### Option 3: Manual Configuration
+```bash
+# Edit deploy-vps.sh manually
+FEE_DISTRIBUTION_DEV_ADDRESS="skaffa1your-actual-address-here"
+CREATE_DEV_ADDRESS_NOW=false
 ```
 
 ### Enable Fee Distribution
@@ -238,7 +288,9 @@ skaffacity-deployment/
 │   ├── cmd/                   # Binary commands
 │   └── Makefile              # Build configuration
 ├── deploy-vps.sh             # Main deployment script
+├── generate-developer-address.sh # Developer address generator
 ├── manage-fees.sh            # Fee distribution management
+├── monitor-health.sh         # Blockchain health monitoring
 └── README.md                 # This file
 ```
 
