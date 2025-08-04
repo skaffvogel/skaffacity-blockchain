@@ -115,6 +115,65 @@ cd "$HOME_DIR"
 # Initialize in current directory
 if $BINARY_NAME init $MONIKER --chain-id $CHAIN_ID; then
     print_success "Initialization successful using default method"
+    
+    # Check if app.toml was created, if not create it
+    if [ ! -f "config/app.toml" ]; then
+        print_status "Creating missing app.toml file..."
+        cat > "config/app.toml" << 'EOF'
+# This is a TOML config file for SkaffaCity app configuration
+
+minimum-gas-prices = "0.001token"
+
+[telemetry]
+service-name = ""
+enabled = false
+enable-hostname = false
+enable-hostname-label = false
+enable-service-label = false
+prometheus-retention-time = 0
+global-labels = []
+
+[api]
+enable = true
+swagger = false
+address = "tcp://0.0.0.0:1317"
+max-open-connections = 1000
+rpc-read-timeout = 10
+rpc-write-timeout = 0
+rpc-max-body-bytes = 1000000
+enabled-unsafe-cors = false
+
+[rosetta]
+enable = false
+address = ":8080"
+blockchain = "app"
+network = "network"
+retries = 3
+offline = false
+
+[grpc]
+enable = true
+address = "0.0.0.0:9090"
+
+[grpc-web]
+enable = true
+address = "0.0.0.0:9091"
+enable-unsafe-cors = false
+
+[state-sync]
+snapshot-interval = 0
+snapshot-keep-recent = 2
+EOF
+        print_success "app.toml created successfully"
+    fi
+    
+    # Ensure all config files are in the right place
+    print_status "Verifying configuration file structure..."
+    ls -la config/ 2>/dev/null || {
+        print_error "Config directory not found after initialization"
+        exit 1
+    }
+    
 else
     print_warning "Default method failed, trying alternative..."
     
@@ -129,7 +188,8 @@ else
         print_status "Creating configuration files manually..."
         
         # Create basic config files
-        cat > "$HOME_DIR/config/config.toml" << 'EOF'
+        mkdir -p config
+        cat > "config/config.toml" << 'EOF'
 # This is a TOML config file for SkaffaCity
 proxy_app = "tcp://127.0.0.1:26658"
 moniker = "skaffacity-node"
@@ -142,7 +202,7 @@ laddr = "tcp://0.0.0.0:26656"
 external_address = ""
 EOF
 
-        cat > "$HOME_DIR/config/app.toml" << 'EOF'
+        cat > "config/app.toml" << 'EOF'
 minimum-gas-prices = "0.001token"
 
 [api]
@@ -155,7 +215,7 @@ address = "0.0.0.0:9090"
 EOF
 
         # Create a basic genesis file
-        cat > "$HOME_DIR/config/genesis.json" << EOF
+        cat > "config/genesis.json" << EOF
 {
   "genesis_time": "$(date -u +%Y-%m-%dT%H:%M:%S.%6NZ)",
   "chain_id": "$CHAIN_ID",
@@ -222,9 +282,9 @@ EOF
         # Generate node key manually
         $BINARY_NAME tendermint show-node-id --home "$HOME_DIR" 2>/dev/null || {
             print_status "Generating node keys manually..."
-            openssl rand -hex 32 > "$HOME_DIR/config/node_key.json.tmp"
-            echo '{"priv_key":{"type":"tendermint/PrivKeyEd25519","value":"'$(cat "$HOME_DIR/config/node_key.json.tmp")'"}}' > "$HOME_DIR/config/node_key.json"
-            rm "$HOME_DIR/config/node_key.json.tmp"
+            openssl rand -hex 32 > "config/node_key.json.tmp"
+            echo '{"priv_key":{"type":"tendermint/PrivKeyEd25519","value":"'$(cat "config/node_key.json.tmp")'"}}' > "config/node_key.json"
+            rm "config/node_key.json.tmp"
         }
         
         print_success "Manual configuration created"
@@ -233,11 +293,29 @@ fi
 
 cd - > /dev/null
 
-# Verify we have the required files
-required_files=("$HOME_DIR/config/config.toml" "$HOME_DIR/config/app.toml" "$HOME_DIR/config/genesis.json")
+# Verify we have the required files (they should be in the home directory now)
+if [ -f "$HOME_DIR/config/config.toml" ]; then
+    required_files=("$HOME_DIR/config/config.toml" "$HOME_DIR/config/app.toml" "$HOME_DIR/config/genesis.json")
+else
+    # Files might be in current working directory structure
+    required_files=("$HOME_DIR/config/config.toml" "$HOME_DIR/config/app.toml" "$HOME_DIR/config/genesis.json")
+    
+    # If files don't exist in expected location, check current directory
+    if [ ! -f "$HOME_DIR/config/config.toml" ] && [ -f "$HOME_DIR/config.toml" ]; then
+        print_status "Moving configuration files to proper structure..."
+        mv "$HOME_DIR/config.toml" "$HOME_DIR/config/config.toml" 2>/dev/null || true
+        mv "$HOME_DIR/app.toml" "$HOME_DIR/config/app.toml" 2>/dev/null || true
+        mv "$HOME_DIR/genesis.json" "$HOME_DIR/config/genesis.json" 2>/dev/null || true
+        mv "$HOME_DIR/priv_validator_key.json" "$HOME_DIR/config/priv_validator_key.json" 2>/dev/null || true
+        mv "$HOME_DIR/node_key.json" "$HOME_DIR/config/node_key.json" 2>/dev/null || true
+    fi
+fi
+
 for file in "${required_files[@]}"; do
     if [ ! -f "$file" ]; then
         print_error "Required file missing: $file"
+        print_status "Available files in config directory:"
+        ls -la "$HOME_DIR/config/" 2>/dev/null || echo "Config directory not found"
         exit 1
     fi
 done
