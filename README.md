@@ -49,6 +49,25 @@ chmod +x *.sh
 # Option 2: Generate developer address first, then deploy
 ./generate-developer-address.sh
 ./deploy-vps.sh
+
+# Option 3: Alternative deployment (if home directory issues occur)
+./deploy-alternative.sh
+```
+
+## ✅ WSL Testing Verified
+
+The SkaffaCity blockchain has been **successfully tested in WSL** and shows:
+
+- ✅ **Module Handler Working**: All 7 modules load with [MODULE] prefix logging
+- ✅ **Address Prefixes**: skaffa1... addresses work correctly  
+- ✅ **44MB Binary**: Production-ready build
+- ✅ **Custom Modules**: NFT, Marketplace, Governance, Staking, Web all load
+
+**WSL Test Output:**
+```
+[MODULE] 🚀 Starting SkaffaCity module loading system...
+[MODULE] ✅ Successfully loaded: 7 modules
+[MODULE] 🎉 SkaffaCity blockchain modules initialized successfully!
 ```
 
 ## 📋 What Gets Deployed
@@ -251,6 +270,21 @@ which skaffacityd
 ls -la /usr/local/bin/skaffacityd
 ```
 
+#### Home Directory / node_key.json Issues
+If you see `Error: open config/node_key.json: no such file or directory`:
+
+```bash
+# Use the alternative deployment script
+./deploy-alternative.sh
+
+# Or manually fix configuration
+sudo systemctl stop skaffacity
+rm -rf ~/.skaffacity
+./deploy-vps.sh
+```
+
+The alternative deployment script (`deploy-alternative.sh`) handles home directory conflicts automatically and includes multiple initialization fallback methods.
+
 #### Fee Distribution Not Working
 ```bash
 # Check configuration
@@ -288,6 +322,7 @@ skaffacity-deployment/
 │   ├── cmd/                   # Binary commands
 │   └── Makefile              # Build configuration
 ├── deploy-vps.sh             # Main deployment script
+├── deploy-alternative.sh     # Alternative deployment (handles config conflicts)
 ├── generate-developer-address.sh # Developer address generator
 ├── manage-fees.sh            # Fee distribution management
 ├── monitor-health.sh         # Blockchain health monitoring
