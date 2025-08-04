@@ -8,17 +8,8 @@ set -e
 echo "🏙️ SkaffaCity Blockchain VPS Deployment"
 echo "========================================"
 
-# Configurati# 17. Check service status
-if sudo systemctl is-active --quiet $SERVICE_NAME; then
-    print_success "SkaffaCity blockchain service is running!"
-else
-    print_error "Service failed to start. Check logs with: sudo journalctl -u $SERVICE_NAME -f"
-    print_status "Showing recent logs:"
-    sudo journalctl -u $SERVICE_NAME --no-pager -n 20
-    exit 1
-fi
-
-# 18. Display deployment informationID="skaffacity-1"
+# Configuration
+CHAIN_ID="skaffacity-1"
 MONIKER="skaffacity-node"
 HOME_DIR="$HOME/.skaffacity"
 BINARY_NAME="skaffacityd"
@@ -188,12 +179,12 @@ CONFIG_FILE="$HOME_DIR/config/config.toml"
 APP_FILE="$HOME_DIR/config/app.toml"
 
 # Update config.toml
-sed -i 's/timeout_commit = "5s"/timeout_commit = "1s"/' $CONFIG_FILE
-sed -i 's/cors_allowed_origins = \[\]/cors_allowed_origins = ["*"]/' $CONFIG_FILE
+sed -i 's/minimum-gas-prices = ""/minimum-gas-prices = "0.001token"/' $CONFIG_FILE
+sed -i 's/enable = false/enable = true/' $CONFIG_FILE
 
 # Update app.toml
 sed -i 's/enable = false/enable = true/' $APP_FILE
-sed -i 's/swagger = false/swagger = true/' $APP_FILE
+sed -i 's/address = "localhost:9090"/address = "0.0.0.0:9090"/' $APP_FILE
 
 # 12. Setup systemd service
 print_status "Creating systemd service..."
@@ -272,21 +263,15 @@ if sudo systemctl is-active --quiet $SERVICE_NAME; then
     print_success "SkaffaCity blockchain service is running!"
 else
     print_error "Service failed to start. Check logs with: sudo journalctl -u $SERVICE_NAME -f"
+    print_status "Showing recent logs:"
+    sudo journalctl -u $SERVICE_NAME --no-pager -n 20
     exit 1
 fi
 
-# 17. Display important information
+# 18. Display deployment information
+print_success "🎉 SkaffaCity Blockchain Deployment Complete!"
 echo ""
-echo "🎉 SkaffaCity Blockchain Deployment Complete!"
-echo "============================================="
-echo ""
-echo "📋 Deployment Information:"
-echo "- Chain ID: $CHAIN_ID"
-echo "- Home Directory: $HOME_DIR"
-echo "- Binary Location: /usr/local/bin/$BINARY_NAME"
-echo "- Service Name: $SERVICE_NAME"
-echo ""
-echo "🌐 Network Endpoints:"
+echo "🌐 Your blockchain is accessible at:"
 echo "- RPC: http://$(curl -s ifconfig.me):26657"
 echo "- API: http://$(curl -s ifconfig.me):1317"
 echo "- gRPC: $(curl -s ifconfig.me):9090"
@@ -325,7 +310,7 @@ echo ""
 echo "🚀 Your SkaffaCity blockchain is now running!"
 echo "💼 Start earning fees from transactions automatically!"
 
-# 18. Show next steps
+# 19. Show next steps
 echo ""
 echo "📝 Next Steps:"
 echo "1. Save your validator key: $BINARY_NAME keys export validator --home $HOME_DIR"
