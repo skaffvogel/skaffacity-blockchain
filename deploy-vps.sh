@@ -61,6 +61,15 @@ fi
 
 print_status "Starting SkaffaCity blockchain deployment..."
 
+# Debug information
+print_status "Debug Information:"
+echo "- Current user: $(whoami)"
+echo "- Home directory: $HOME"
+echo "- Blockchain home: $HOME_DIR"
+echo "- Binary location: $(which $BINARY_NAME 2>/dev/null || echo 'Not found in PATH')"
+echo "- Binary version: $($BINARY_NAME version 2>/dev/null || echo 'Cannot get version')"
+echo ""
+
 # 1. Update system
 print_status "Updating system packages..."
 sudo apt update && sudo apt upgrade -y
@@ -97,9 +106,17 @@ if ! command -v $BINARY_NAME &> /dev/null; then
 fi
 
 # Test binary
+print_status "Testing binary functionality..."
 if ! $BINARY_NAME version &> /dev/null; then
     print_error "Binary is not working correctly"
     exit 1
+fi
+
+# Check for any existing global config that might interfere
+if [ -f "$HOME/.skaffacityd" ] || [ -d "$HOME/.skaffacityd" ]; then
+    print_warning "Found existing skaffacityd config in home directory. This might cause conflicts."
+    print_status "Moving existing config to backup..."
+    mv "$HOME/.skaffacityd" "$HOME/.skaffacityd.backup.$(date +%s)" 2>/dev/null || true
 fi
 
 print_success "Binary installed and verified: /usr/local/bin/skaffacityd"
@@ -107,27 +124,39 @@ print_success "Binary installed and verified: /usr/local/bin/skaffacityd"
 # 5. Initialize chain
 print_status "Initializing blockchain..."
 
+# Clean any existing configuration that might conflict
+if [ -d "$HOME_DIR" ]; then
+    print_warning "Existing blockchain configuration found. Backing up and cleaning..."
+    mv "$HOME_DIR" "${HOME_DIR}.backup.$(date +%s)" 2>/dev/null || true
+fi
+
 # Ensure home directory exists with correct permissions
 mkdir -p $HOME_DIR
 chmod 700 $HOME_DIR
 
-$BINARY_NAME init $MONIKER --chain-id $CHAIN_ID --home $HOME_DIR
+# Initialize with explicit home directory
+print_status "Running: $BINARY_NAME init $MONIKER --chain-id $CHAIN_ID --home $HOME_DIR"
+$BINARY_NAME init $MONIKER --chain-id $CHAIN_ID --home $HOME_DIR --overwrite
 
 # Verify initialization was successful
 if [ ! -f "$HOME_DIR/config/node_key.json" ]; then
-    print_error "Blockchain initialization failed - node_key.json not found"
+    print_error "Blockchain initialization failed - node_key.json not found at $HOME_DIR/config/node_key.json"
+    print_error "Directory contents:"
+    ls -la "$HOME_DIR/config/" 2>/dev/null || print_error "Config directory does not exist"
     exit 1
 fi
 
-print_success "Blockchain initialized successfully"
+print_success "Blockchain initialized successfully at $HOME_DIR"
 
 # 6. Create accounts
 print_status "Creating validator account..."
+print_status "Running: $BINARY_NAME keys add validator --home $HOME_DIR"
 $BINARY_NAME keys add validator --home $HOME_DIR
 
 # 6.1. Create developer account if requested
 if [ "$CREATE_DEV_ADDRESS_NOW" = true ] && [ -z "$FEE_DISTRIBUTION_DEV_ADDRESS" ]; then
     print_status "Creating developer account for fee distribution..."
+    print_status "Running: $BINARY_NAME keys add developer --home $HOME_DIR"
     $BINARY_NAME keys add developer --home $HOME_DIR
     FEE_DISTRIBUTION_DEV_ADDRESS=$($BINARY_NAME keys show developer -a --home $HOME_DIR)
     print_success "Developer account created: $FEE_DISTRIBUTION_DEV_ADDRESS"
