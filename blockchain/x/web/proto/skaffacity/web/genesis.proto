@@ -1,0 +1,13 @@
+syntax = "proto3";
+package skaffacity.web;
+
+import "gogoproto/gogo.proto";
+import "skaffacity/web/web.proto";
+
+option go_package = "skaffacity/x/web/types";
+
+// GenesisState defines the web module's genesis state.
+message GenesisState {
+  // web_config defines the web configuration
+  WebConfig web_config = 1 [(gogoproto.nullable) = false];
+}

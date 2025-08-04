@@ -1,0 +1,36 @@
+# Build artifacts
+/blockchain/bin/
+/blockchain/build/
+*.exe
+
+# Go build cache
+/blockchain/go.sum.bak
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+health-report-*.txt
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Local configuration
+config.local.*
+secrets.*
+
+# Node modules (if any)
+node_modules/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3

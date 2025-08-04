@@ -1,0 +1,59 @@
+syntax = "proto3";
+package skaffacity.web;
+
+import "gogoproto/gogo.proto";
+import "amino/amino.proto";
+
+option go_package = "skaffacity/x/web/types";
+
+// WebConfig represents the configuration for the web interface
+message WebConfig {
+  // enabled indicates if the web interface is enabled
+  bool enabled = 1;
+  
+  // port is the port number for the web interface  
+  uint32 port = 2;
+  
+  // host is the host address for the web interface
+  string host = 3;
+  
+  // api_endpoint is the API endpoint URL
+  string api_endpoint = 4;
+  
+  // websocket_endpoint is the WebSocket endpoint URL
+  string websocket_endpoint = 5;
+  
+  // theme is the UI theme configuration
+  string theme = 6;
+  
+  // features are the enabled features
+  repeated string features = 7;
+}
+
+// MsgUpdateWebConfig defines a message to update web configuration
+message MsgUpdateWebConfig {
+  string creator = 1;
+  WebConfig config = 2;
+}
+
+// MsgUpdateWebConfigResponse defines the response for MsgUpdateWebConfig
+message MsgUpdateWebConfigResponse {}
+
+// QueryGetWebConfigRequest is request type for the Query/WebConfig RPC method
+message QueryGetWebConfigRequest {}
+
+// QueryGetWebConfigResponse is response type for the Query/WebConfig RPC method  
+message QueryGetWebConfigResponse {
+  WebConfig web_config = 1 [(gogoproto.nullable) = false];
+}
+
+// QueryAllWebConfigRequest is request type for the Query/WebConfigAll RPC method
+message QueryAllWebConfigRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+// QueryAllWebConfigResponse is response type for the Query/WebConfigAll RPC method
+message QueryAllWebConfigResponse {
+  repeated WebConfig web_config = 1 [(gogoproto.nullable) = false];
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}

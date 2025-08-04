@@ -1,0 +1,13 @@
+syntax = "proto3";
+package skaffacity.web;
+
+import "amino/amino.proto";
+import "skaffacity/web/web.proto";
+
+option go_package = "skaffacity/x/web/types";
+
+// Msg defines the Msg service.
+service Msg {
+  // UpdateWebConfig defines a method for updating web configuration
+  rpc UpdateWebConfig(MsgUpdateWebConfig) returns (MsgUpdateWebConfigResponse);
+}

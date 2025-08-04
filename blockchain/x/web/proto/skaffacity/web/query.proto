@@ -1,0 +1,22 @@
+syntax = "proto3";
+package skaffacity.web;
+
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "skaffacity/web/web.proto";
+
+option go_package = "skaffacity/x/web/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Parameters queries the parameters of the module.
+  rpc WebConfig(QueryGetWebConfigRequest) returns (QueryGetWebConfigResponse) {
+    option (google.api.http).get = "/skaffacity/web/config";
+  }
+  
+  // Queries a list of WebConfig items.
+  rpc WebConfigAll(QueryAllWebConfigRequest) returns (QueryAllWebConfigResponse) {
+    option (google.api.http).get = "/skaffacity/web/config/all";
+  }
+}
