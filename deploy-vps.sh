@@ -8,8 +8,17 @@ set -e
 echo "🏙️ SkaffaCity Blockchain VPS Deployment"
 echo "========================================"
 
-# Configuration
-CHAIN_ID="skaffacity-1"
+# Configurati# 17. Check service status
+if sudo systemctl is-active --quiet $SERVICE_NAME; then
+    print_success "SkaffaCity blockchain service is running!"
+else
+    print_error "Service failed to start. Check logs with: sudo journalctl -u $SERVICE_NAME -f"
+    print_status "Showing recent logs:"
+    sudo journalctl -u $SERVICE_NAME --no-pager -n 20
+    exit 1
+fi
+
+# 18. Display deployment informationID="skaffacity-1"
 MONIKER="skaffacity-node"
 HOME_DIR="$HOME/.skaffacity"
 BINARY_NAME="skaffacityd"
@@ -84,14 +93,42 @@ fi
 
 # 4. Build blockchain binary
 print_status "Building SkaffaCity blockchain..."
+cd blockchain
 make build
 sudo cp bin/skaffacityd /usr/local/bin/
 sudo chmod +x /usr/local/bin/skaffacityd
-print_success "Binary installed to /usr/local/bin/skaffacityd"
+cd ..
+
+# Verify binary installation
+if ! command -v $BINARY_NAME &> /dev/null; then
+    print_error "Binary installation failed - $BINARY_NAME not found in PATH"
+    exit 1
+fi
+
+# Test binary
+if ! $BINARY_NAME version &> /dev/null; then
+    print_error "Binary is not working correctly"
+    exit 1
+fi
+
+print_success "Binary installed and verified: /usr/local/bin/skaffacityd"
 
 # 5. Initialize chain
 print_status "Initializing blockchain..."
+
+# Ensure home directory exists with correct permissions
+mkdir -p $HOME_DIR
+chmod 700 $HOME_DIR
+
 $BINARY_NAME init $MONIKER --chain-id $CHAIN_ID --home $HOME_DIR
+
+# Verify initialization was successful
+if [ ! -f "$HOME_DIR/config/node_key.json" ]; then
+    print_error "Blockchain initialization failed - node_key.json not found"
+    exit 1
+fi
+
+print_success "Blockchain initialized successfully"
 
 # 6. Create accounts
 print_status "Creating validator account..."
@@ -160,6 +197,10 @@ sed -i 's/swagger = false/swagger = true/' $APP_FILE
 
 # 12. Setup systemd service
 print_status "Creating systemd service..."
+
+# Ensure correct ownership of home directory
+sudo chown -R $USER:$USER $HOME_DIR
+
 sudo tee /etc/systemd/system/$SERVICE_NAME.service > /dev/null <<EOF
 [Unit]
 Description=SkaffaCity Blockchain Node
@@ -167,10 +208,13 @@ After=network-online.target
 
 [Service]
 User=$USER
+Group=$USER
+WorkingDirectory=$HOME_DIR
 ExecStart=/usr/local/bin/$BINARY_NAME start --home $HOME_DIR
 Restart=on-failure
 RestartSec=3
 LimitNOFILE=65535
+Environment=HOME=/home/$USER
 
 [Install]
 WantedBy=multi-user.target
@@ -185,17 +229,45 @@ sudo ufw allow 1317/tcp   # API
 sudo ufw allow 9090/tcp   # gRPC
 sudo ufw --force enable
 
-# 14. Enable and start service
+# 14. Validate configuration before starting service
+print_status "Validating blockchain configuration..."
+
+# Check if all required files exist
+required_files=(
+    "$HOME_DIR/config/node_key.json"
+    "$HOME_DIR/config/priv_validator_key.json"
+    "$HOME_DIR/config/genesis.json"
+    "$HOME_DIR/config/config.toml"
+    "$HOME_DIR/config/app.toml"
+)
+
+for file in "${required_files[@]}"; do
+    if [ ! -f "$file" ]; then
+        print_error "Required configuration file missing: $file"
+        exit 1
+    fi
+done
+
+# Test if the blockchain can validate its configuration
+print_status "Testing blockchain configuration..."
+if ! $BINARY_NAME validate-genesis $HOME_DIR/config/genesis.json &> /dev/null; then
+    print_error "Genesis file validation failed"
+    exit 1
+fi
+
+print_success "Blockchain configuration validated successfully"
+
+# 15. Enable and start service
 print_status "Starting SkaffaCity blockchain service..."
 sudo systemctl daemon-reload
 sudo systemctl enable $SERVICE_NAME
 sudo systemctl start $SERVICE_NAME
 
-# 15. Wait for service to start
+# 16. Wait for service to start
 print_status "Waiting for service to start..."
 sleep 10
 
-# 16. Check service status
+# 17. Check service status
 if sudo systemctl is-active --quiet $SERVICE_NAME; then
     print_success "SkaffaCity blockchain service is running!"
 else
