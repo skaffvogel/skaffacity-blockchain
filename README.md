@@ -52,6 +52,12 @@ chmod +x *.sh
 
 # Option 3: Alternative deployment (if home directory issues occur)
 ./deploy-alternative.sh
+
+# Option 4: Continue deployment from configuration step (skips build)
+./deploy-continue.sh
+
+# Option 5: Quick fix for configuration issues only
+./deploy-quick.sh
 ```
 
 ## ✅ WSL Testing Verified
@@ -303,6 +309,25 @@ chmod +x create-app-toml.sh
 # Restart the service
 sudo systemctl restart skaffacity
 sudo systemctl status skaffacity
+```
+
+#### Deployment Script Options
+Choose the right deployment script for your situation:
+
+**deploy-vps.sh** - Full deployment including build (first time)
+**deploy-alternative.sh** - Alternative method for home directory conflicts  
+**deploy-continue.sh** - Continue from configuration step (skips build)
+**deploy-quick.sh** - Quick fix for configuration issues only
+
+```bash
+# If build completed but configuration failed
+./deploy-continue.sh
+
+# If only need to fix app.toml and service
+./deploy-quick.sh
+
+# If complete restart needed
+./deploy-alternative.sh
 ```
 
 #### Fee Distribution Not Working
