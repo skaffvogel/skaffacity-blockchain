@@ -36,7 +36,7 @@ print_header() {
 }
 
 # Configuration variables
-HOME_DIR="$HOME/.skaffacity"
+HOME_DIR="$HOME/skaffacity"
 CHAIN_ID="skaffacity-1"
 MONIKER="skaffacity-validator"
 KEYRING_BACKEND="test"

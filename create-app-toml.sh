@@ -19,7 +19,7 @@ print_error() {
 
 # Check if we're in the right directory
 if [ ! -f "config/config.toml" ]; then
-    print_error "config/config.toml not found. Please run this from the ~/.skaffacity directory"
+    print_error "config/config.toml not found. Please run this from the ~/skaffacity directory"
     exit 1
 fi
 

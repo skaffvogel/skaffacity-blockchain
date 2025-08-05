@@ -11,7 +11,7 @@ echo "========================================"
 # Configuration
 CHAIN_ID="skaffacity-1"
 MONIKER="skaffacity-node"
-HOME_DIR="$HOME/.skaffacity"
+HOME_DIR="$HOME/skaffacity"
 BINARY_NAME="skaffacityd"
 SERVICE_NAME="skaffacity"
 FEE_DISTRIBUTION_DEV_ADDRESS=""  # Leave empty - will be created during deployment

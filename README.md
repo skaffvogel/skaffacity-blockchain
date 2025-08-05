@@ -177,13 +177,13 @@ sudo systemctl stop skaffacity
 ### Blockchain Operations
 ```bash
 # Check node status
-skaffacityd status --home ~/.skaffacity
+skaffacityd status --home ~/skaffacity
 
 # View accounts
-skaffacityd keys list --home ~/.skaffacity
+skaffacityd keys list --home ~/skaffacity
 
 # Check balances
-skaffacityd query bank balances $(skaffacityd keys show validator -a --home ~/.skaffacity) --home ~/.skaffacity
+skaffacityd query bank balances $(skaffacityd keys show validator -a --home ~/skaffacity) --home ~/skaffacity
 ```
 
 ### Fee Distribution Management
@@ -285,7 +285,7 @@ If you see `Error: open config/node_key.json: no such file or directory`:
 
 # Or manually fix configuration
 sudo systemctl stop skaffacity
-rm -rf ~/.skaffacity
+rm -rf ~/skaffacity
 ./deploy-vps.sh
 ```
 
@@ -299,7 +299,7 @@ If you see `open config/app.toml: no such file or directory`:
 sudo systemctl stop skaffacity
 
 # Navigate to blockchain directory
-cd ~/.skaffacity
+cd ~/skaffacity
 
 # Create the missing app.toml file
 wget https://raw.githubusercontent.com/skaffvogel/skaffacity-blockchain/main/create-app-toml.sh

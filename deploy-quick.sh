@@ -30,7 +30,7 @@ print_header() {
     echo -e "${BLUE}================================${NC}"
 }
 
-HOME_DIR="$HOME/.skaffacity"
+HOME_DIR="$HOME/skaffacity"
 
 print_header
 

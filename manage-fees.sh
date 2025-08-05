@@ -6,7 +6,7 @@
 set -e
 
 BINARY_NAME="skaffacityd"
-HOME_DIR="$HOME/.skaffacity"
+HOME_DIR="$HOME/skaffacity"
 
 # Colors
 RED='\033[0;31m'
