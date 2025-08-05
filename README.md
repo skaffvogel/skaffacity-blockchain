@@ -285,6 +285,26 @@ rm -rf ~/.skaffacity
 
 The alternative deployment script (`deploy-alternative.sh`) handles home directory conflicts automatically and includes multiple initialization fallback methods.
 
+#### Missing app.toml File
+If you see `open config/app.toml: no such file or directory`:
+
+```bash
+# Stop the service
+sudo systemctl stop skaffacity
+
+# Navigate to blockchain directory
+cd ~/.skaffacity
+
+# Create the missing app.toml file
+wget https://raw.githubusercontent.com/skaffvogel/skaffacity-blockchain/main/create-app-toml.sh
+chmod +x create-app-toml.sh
+./create-app-toml.sh
+
+# Restart the service
+sudo systemctl restart skaffacity
+sudo systemctl status skaffacity
+```
+
 #### Fee Distribution Not Working
 ```bash
 # Check configuration
